@@ -92,59 +92,11 @@ class CreateNewPasswordSerializer(serializers.Serializer):
         return user
 
 
-# class ShortUserInfoSerializer(serializers.ModelSerializer):
-#     """Краткая информауия о пользователе"""
+class FollowSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['email']
+
+
+
 #
-#     class Meta:
-#         model = User
-#         fields = ['id', 'username', 'name', 'avatar']
-#         read_only_fields = ['id', 'username', 'name', 'avatar']
-#
-#
-#
-# class UserFollowingListSerializer(ShortUserInfoSerializer):
-#     """На кого подписан пользователь"""
-#     id = serializers.IntegerField(source='following_user_id')
-#
-#
-# class UserFollowersListSerializer(ShortUserInfoSerializer):
-#     """Подписчики пользователя"""
-#     id = serializers.IntegerField(source='user_id')
-#
-#
-# class FollowSerializer(serializers.ModelSerializer):
-#     """Подписка текущего пользователя на другого"""
-#     following_user_id = serializers.IntegerField()
-#
-#     class Meta:
-#         model = Following
-#         fields = ['following_user_id']
-#
-#     @transaction.atomic
-#     def save(self):
-#         user = self.context['request'].user
-#         following_user_id = self.validated_data['following_user_id']
-#         following_user_obj = get_object_or_404(User, id=following_user_id)
-#         if user == following_user_obj:
-#             return
-#         following = Following.objects.get_or_create(
-#             user=user, following_user=following_user_obj)
-#         return following
-#
-#
-# class UnfollowSerializer(serializers.ModelSerializer):
-#     """Отписаться от пользователя"""
-#     unfollowing_user_id = serializers.IntegerField(source='following_user_id')
-#
-#     class Meta:
-#         model = Following
-#         fields = ['unfollowing_user_id']
-#
-#     @transaction.atomic
-#     def save(self):
-#         user = self.context['request'].user
-#         unfollowing_user_id = self.validated_data['following_user_id']
-#         unfollowing_user_obj = get_object_or_404(User, id=unfollowing_user_id)
-#         unfollowing = get_object_or_404(
-#             Following, user=user, following_user=unfollowing_user_obj).delete()
-#         return unfollowing

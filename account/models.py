@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -36,16 +37,18 @@ class User(AbstractUser):
     country = models.CharField(max_length=30,choices=sorted(COUNTRIES.items()), null=True, blank=True)
     is_active = models.BooleanField(default=False)
     created_date = models.DateField(auto_now_add=True)
+    # followers = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='followers', blank=True)
+    # followings = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='followings', blank=True)
     name = models.CharField(max_length=100, blank=True, null=True)
     activation_code = models.CharField(max_length=255, blank=True)
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ['username']
 
     objects = UserManager()
 
     def __str__(self):
-        return f'{self.email}'
+        return f'{self.username}'
 
     def create_activation_code(self):
         import hashlib
@@ -55,19 +58,19 @@ class User(AbstractUser):
         activation_code = md5_object.hexdigest()
         self.activation_code = activation_code
 
-class Following(models.Model):
-    user = models.ForeignKey(User, related_name='following', on_delete=models.CASCADE)
-    following_user = models.ForeignKey(User, related_name='followers', on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+# class Following(models.Model):
+#     user = models.ForeignKey(User, related_name='following', on_delete=models.CASCADE)
+#     following_user = models.ForeignKey(User, related_name='followers', on_delete=models.CASCADE)
+#     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['user', 'following_user'],
-                                    name='unique_followers'),
-            models.CheckConstraint(check=Q(user_id=F('following_user_id')),
-                                   name='self_not_follow')
-        ]
-
-    def __str__(self):
-        return f'{self.user_id} follows {self.following_user_id}'
-
+    # class Meta:
+    #     constraints = [
+#             models.UniqueConstraint(fields=['user', 'following_user'],
+#                                     name='unique_followers'),
+#             models.CheckConstraint(check=Q(user_id=F('following_user_id')),
+#                                    name='self_not_follow')
+#         ]
+#
+#     def __str__(self):
+#         return f'{self.user_id} follows {self.following_user_id}'
+#
