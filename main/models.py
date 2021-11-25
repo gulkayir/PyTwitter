@@ -14,11 +14,12 @@ class Category(models.Model):
 class Tweet(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tweet')
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='tweet')
+    title = models.CharField(max_length=455)
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return str(self.title)
+        return self.title
 
 
 class Image(models.Model):
@@ -43,7 +44,6 @@ class Likes(models.Model):
     likes = models.BooleanField(default=False)
     tweet = models.ForeignKey(Tweet, on_delete=models.CASCADE, related_name='likes')
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='likes')
-
 
 
     def __str__(self):

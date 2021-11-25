@@ -7,7 +7,7 @@ python-decouple
 djangorestframework-simplejwt
 
 
-django-filter
+django-countries
 drf-yasg
 celery
 redis

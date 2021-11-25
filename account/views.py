@@ -8,7 +8,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from . utils import send_activation_code
-from account.serializers import RegisterSerializer, LoginSerializer, ResetPasswordSerializer
+from account.serializers import RegisterSerializer, LoginSerializer, CreateNewPasswordSerializer
 
 User = get_user_model()
 
@@ -22,7 +22,7 @@ class RegistrationView(APIView):
             return Response('Successfully registered. Check your email to confirm', status=status.HTTP_201_CREATED)
 
 
-class ActivateView(APIView):
+class ActivationView(APIView):
     def get(self, request, activation_code):
         user = get_object_or_404(User, activation_code=activation_code)
         user.is_active = True
@@ -56,10 +56,13 @@ class ResetPassword(APIView):
 
 
 class ResetComplete(APIView):
-    def post(self, request):
-        serializer = ResetPasswordSerializer(data=request.data)
+    def post(self, request, activation_code):
+        user = get_object_or_404(User, activation_code=activation_code)
+        user.activation_code = ''
+        user.is_active = True
+        user.save()
+
+        serializer = CreateNewPasswordSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
-            return Response('You successfully reseted your password ', status=status.HTTP_200_OK)
-
-
+            return Response('Вы успешно восстановили пароль', status=200)

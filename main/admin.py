@@ -10,7 +10,7 @@ class PostImageInLine(admin.TabularInline):
 @admin.register(Tweet)
 class TweetAdmin(admin.ModelAdmin):
     inlines = [PostImageInLine, ]
-    list_display = ('title', )
+    list_display = ('category', )
 
 
 admin.site.register(Category)
