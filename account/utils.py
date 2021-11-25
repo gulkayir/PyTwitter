@@ -2,29 +2,28 @@
 from celery import shared_task
 from django.core.mail import send_mail
 
-@shared_task
-def send_activation_code(email, activation_code):
-    activation_url = f'http://localhost:8000/api/v1/account/activate/{activation_code}'
-    message = f"""
-        Thanks for your registration
-        Please, activate your account.
-        Activation link: {activation_url}
-    """
-    send_mail(
-        'Activate you account',
-        message,
-        'test@test.com',
-        [email, ],
-        fail_silently=False)
 
-@shared_task
-def send_activation_mail(email, activation_code):
-    activation_url = f'http://localhost:8000/api/v1/account/forgot-password-complete/{activation_code}'
-    message = f"""To reset password, follow this url: {activation_url}"""
+def send_confirmation_email(user):
+    code = user.activation_code
+    full_link = f'http://92.245.126.22/api/v1/accounts/activate/{code}'
+    to_email = user.email
     send_mail(
-        'Resetting password',
+        'Subject here',
+        full_link,
+        'from@example.com',
+        [to_email],
+        fail_silently=False,
+    )
+
+
+def send_activation_code(user):
+    activation_url = f'{user.activation_code}'
+    message = f"""Restore password use code: {activation_url}"""
+    to_email = user.email
+    send_mail(
+        'Активация аккаунта',
         message,
-        'test@test.com',
-        [email, ],
-        fail_silently=False
+        'test@my_project.com',
+        [to_email],
+        fail_silently=False,
     )

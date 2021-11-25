@@ -4,6 +4,10 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django_countries.data import COUNTRIES
 from django.db.models import Q, F
+from rest_framework_simplejwt.tokens import RefreshToken
+
+AUTH_PROVIDERS = {'facebook':'facebook', 'google':'google', 'twitter':'twitter', 'email':'email'}
+
 
 
 class UserManager(BaseUserManager):
@@ -37,10 +41,9 @@ class User(AbstractUser):
     country = models.CharField(max_length=30,choices=sorted(COUNTRIES.items()), null=True, blank=True)
     is_active = models.BooleanField(default=False)
     created_date = models.DateField(auto_now_add=True)
-    # followers = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='followers', blank=True)
-    # followings = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='followings', blank=True)
     name = models.CharField(max_length=100, blank=True, null=True)
     activation_code = models.CharField(max_length=255, blank=True)
+    # auth_provider = models.CharField(max_length=255, blank=True, null=False, default=AUTH_PROVIDERS.get('email'))
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
@@ -58,19 +61,16 @@ class User(AbstractUser):
         activation_code = md5_object.hexdigest()
         self.activation_code = activation_code
 
-# class Following(models.Model):
-#     user = models.ForeignKey(User, related_name='following', on_delete=models.CASCADE)
-#     following_user = models.ForeignKey(User, related_name='followers', on_delete=models.CASCADE)
-#     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    def activate_with_code(self, code):
+        if str(self.activation_code) != str(code):
+            raise Exception('Code is invalid')
+        self.is_active = True
+        self.activation_code = ''
+        self.save(update_fields=['is_active', 'activation_code'])
 
-    # class Meta:
-    #     constraints = [
-#             models.UniqueConstraint(fields=['user', 'following_user'],
-#                                     name='unique_followers'),
-#             models.CheckConstraint(check=Q(user_id=F('following_user_id')),
-#                                    name='self_not_follow')
-#         ]
-#
-#     def __str__(self):
-#         return f'{self.user_id} follows {self.following_user_id}'
-#
+    def tokens(self):
+        refresh = RefreshToken.for_user(self)
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token)
+        }

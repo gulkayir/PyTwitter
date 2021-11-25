@@ -7,7 +7,7 @@ from rest_framework.authtoken.models import Token
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from . utils import send_activation_code
+from .utils import send_activation_code
 from account.serializers import RegisterSerializer, LoginSerializer, CreateNewPasswordSerializer
 
 User = get_user_model()
@@ -47,21 +47,19 @@ class LogoutView(APIView):
 class ResetPassword(APIView):
     def get(self, request):
         email = request.query_params.get('email')
-        user = get_object_or_404(User, email=email)
-        user.is_active = False
-        user.create_activation_code()
-        user.save()
-        send_activation_code.delay(user.email, user.activation_code)
-        return Response('Email sent', status=status.HTTP_200_OK)
+        try:
+            user = User.objects.get(email=email)
+            user.is_active = False
+            user.create_activation_code()
+            user.save()
+            send_activation_code(user)
+            return Response('Вам отправлено письмо', status=200)
+        except User.DoesNotExist:
+            return Response({'msg': 'User doesnt exist'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ResetComplete(APIView):
-    def post(self, request, activation_code):
-        user = get_object_or_404(User, activation_code=activation_code)
-        user.activation_code = ''
-        user.is_active = True
-        user.save()
-
+    def post(self, request):
         serializer = CreateNewPasswordSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()

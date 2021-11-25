@@ -10,6 +10,6 @@ urlpatterns = [
     path('refresh/', jwt_views.TokenRefreshView.as_view()),
     path('register/', RegistrationView.as_view()),
     path('activate/<str:activation_code>/', ActivationView.as_view()),
-    path('forgot-password/', ResetPassword.as_view()),
-    path('forgot-password-complete/<str:activation_code>/', ResetComplete.as_view()),
+    path('reset-password/', ResetPassword.as_view()),
+    path('reset-password-complete/', ResetComplete.as_view()),
 ]
