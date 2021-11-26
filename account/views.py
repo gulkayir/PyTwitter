@@ -1,14 +1,18 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import render, get_object_or_404
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from main.models import Tweet
+from main.serializers import TweetSerializer
 from .utils import send_activation_code
-from account.serializers import RegisterSerializer, LoginSerializer, CreateNewPasswordSerializer
+from account.serializers import RegisterSerializer, LoginSerializer, CreateNewPasswordSerializer, FollowSerializer, \
+    UserSerializer, SearchSerializer
 
 User = get_user_model()
 
@@ -65,45 +69,87 @@ class ResetComplete(APIView):
             serializer.save()
             return Response('Password reseted successfully', status=200)
 
-class FollowUnfollowView(APIView):
+class ProfileView(generics.RetrieveAPIView):
+    queryset = get_user_model().objects.all()
+    serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, ]
 
-    def first_profile(self):
-        try:
-            return User.objects.get(user=self.request.user)
-        except User.DoesNotExist:
-            return Response('User doesnt exist', status=status.HTTP_400_BAD_REQUEST)
 
-    def second_profile(self, pk):
-            try:
-                return User.objects.get(id=pk)
-            except User.DoesNotExist:
-                return Response('User doesnt exist', status=status.HTTP_400_BAD_REQUEST)
+class MyProfile(APIView):
+    permission_classes = [IsAuthenticated, ]
 
-    def post(self, request, format=None):
-        pk = request.data.get('email')
-        req_type = request.data.get('type')
+    def get(self, request, format=None, pk=None):
+        email = self.request.user.email
+        query = get_user_model().objects.get(email=email)
+        serializer = UserSerializer(query)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-        first_profile = self.first_profile()
-        second_profile = self.second_profile(pk)
 
-        if req_type == 'follow':
-                first_profile.following.add(second_profile)
-                second_profile.followers.add(first_profile)
-                return Response({"Following": "Following success!!"}, status=status.HTTP_200_OK)
 
-        elif req_type == 'accept':
-            first_profile.followers.add(second_profile)
-            second_profile.following.add(first_profile)
-            return Response({"Accepted": "Follow request successfuly accespted!!"}, status=status.HTTP_200_OK)
+class SearchViewSet(generics.ListAPIView):
+    queryset = get_user_model().objects.all()
+    serializer_class = SearchSerializer
+    lookup_field = 'username'
+    permission_classes = [IsAuthenticated, ]
 
-        elif req_type == 'unfollow':
-            first_profile.following.remove(second_profile)
-            second_profile.followers.remove(first_profile)
-            return Response({"Unfollow": "Unfollow success!!"}, status=status.HTTP_200_OK)
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search = self.request.query_params.get('search')
+        if search is not None:
+            queryset = queryset.filter(email__icontains=search)
+        return queryset
 
-        elif req_type == 'remove':
-            first_profile.followers.remove(second_profile)
-            second_profile.following.remove(first_profile)
-            return Response({"Remove Success": "Successfuly removed your follower!!"}, status=status.HTTP_200_OK)
 
+class FeedsView(APIView):
+    permission_classes = [IsAuthenticated, ]
+
+    def get(self, request, format=None, pk=None):
+        user = self.request.user
+        followings = user.followings.all()
+        print(followings)
+        tweets = Tweet.objects.filter(author__in=followings)
+        serializer = TweetSerializer(tweets, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class FollowUserView(APIView):
+    permission_classes = [IsAuthenticated, ]
+
+    def get(self, request, format=None, username=None):
+        to_user = get_user_model().objects.get(username=username)
+        from_user = self.request.user
+        follow = None
+        if from_user != to_user:
+            if from_user in to_user.followers.all():
+                follow = False
+                from_user.followings.remove(to_user)
+                to_user.followers.remove(from_user)
+
+            else:
+                follow = True
+                from_user.followings.add(to_user)
+                to_user.followers.add(from_user)
+        else:
+            raise Exception('You cant follow yourself')
+        context = {'follow': follow}
+        return Response(context)
+
+
+class GetFollowersView(generics.ListAPIView):
+    serializer_class = FollowSerializer
+    permission_classes = [IsAuthenticated, ]
+
+    def get_queryset(self):
+        username = self.kwargs['username']
+        queryset = get_user_model().objects.get(username=username).followers.all()
+        return queryset
+
+
+class GetFollowingsView(generics.ListAPIView):
+    serializer_class = FollowSerializer
+    permission_classes = [IsAuthenticated, ]
+
+    def get_queryset(self):
+        username = self.kwargs['username']
+        queryset = get_user_model().objects.get(username=username).followings.all()
+        return queryset

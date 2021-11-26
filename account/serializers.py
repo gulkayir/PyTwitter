@@ -29,7 +29,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         email = validated_data.get('email')
         password = validated_data.get('password')
         user = User.objects.create_user(email=email, password=password)
-        send_activation_code(email=user.email, activation_code=user.activation_code)
+        send_activation_code(email, activation_code=user.activation_code)
         return user
 
 class LoginSerializer(serializers.Serializer):
@@ -99,21 +99,27 @@ class CreateNewPasswordSerializer(serializers.Serializer):
         return user
 
 
-class EachUserSerializer(serializers.ModelSerializer):
-    email = serializers.CharField(source='user.email')
-
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ( 'email', 'avatar')
-        read_only_fields = ('email', 'avatar')
+        fields = ('email', 'avatar', 'id', 'followers', 'followings')
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['followers'] = instance.followers.count()
+        representation['followings'] = instance.followings.count()
+
+        return representation
 
 
-class FollowerSerializer(serializers.ModelSerializer):
-    followers = EachUserSerializer(many=True, read_only=True)
-    following = EachUserSerializer(many=True, read_only=True)
-
+class SearchSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('followers', 'following')
-        read_only_fields = ('followers', 'following')
+        fields = ['email']
+
+
+class FollowSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username']
 

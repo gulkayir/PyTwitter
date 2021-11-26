@@ -33,9 +33,8 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
-
-    username = None
-    email = models.EmailField(max_length=100, primary_key=True)
+    username = models.CharField(max_length=100, blank=True, null=True)
+    email = models.EmailField(max_length=100, unique=True)
     avatar = models.ImageField(default='defaultimages/default.jpeg', upload_to='avatar', blank=True, null=True)
     header = models.ImageField(default='defaultimages/defaultcover.png', upload_to='headers', blank=True, null=True)
     about = models.CharField(max_length=160, blank=True, null=True)
@@ -44,16 +43,17 @@ class User(AbstractUser):
     created_date = models.DateField(auto_now_add=True)
     name = models.CharField(max_length=100, blank=True, null=True)
     activation_code = models.CharField(max_length=255, blank=True)
-    following = models.ManyToManyField('self', blank=True, related_name='followers', symmetrical=False)
+    followers = models.ManyToManyField('self', related_name='followers', blank=True)
+    followings = models.ManyToManyField('self', related_name='followings', blank=True)
     # auth_provider = models.CharField(max_length=255, blank=True, null=False, default=AUTH_PROVIDERS.get('email'))
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['name']
+    REQUIRED_FIELDS = ['username']
 
     objects = UserManager()
 
     def __str__(self):
-        return f'@{self.name}'
+        return f'@{self.username}'
 
     def create_activation_code(self):
         import hashlib
@@ -76,18 +76,6 @@ class User(AbstractUser):
             'refresh': str(refresh),
             'access': str(refresh.access_token)
         }
-
-    def followers_count(self):
-        ''' exception if no of followers '''
-        if self.followers.count():
-            return self.followers.count()
-        return 0
-
-    def following_count(self):
-        ''' exception if no of following '''
-        if self.following.count():
-            return self.following.count()
-        return 0
 
     @property
     def tweet_count(self):
