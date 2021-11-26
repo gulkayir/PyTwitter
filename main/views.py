@@ -25,9 +25,9 @@ class PermissionMixin:
         return [permission() for permission in permissions]
 
 
-class CategoryListView(generics.ListAPIView):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
+class TagListView(generics.ListAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
 
 class TweetViewSet(PermissionMixin, viewsets.ModelViewSet):
     queryset = Tweet.objects.all()
@@ -46,8 +46,7 @@ class TweetViewSet(PermissionMixin, viewsets.ModelViewSet):
     def search(self, request, pk=None):
         q = request.query_params.get('q')
         queryset = self.get_queryset()
-        queryset = queryset.filter(Q(title__icontains=q) |
-                                   Q(text__icontains=q))
+        queryset = queryset.filter(Q(text__icontains=q))
         serializer = TweetSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 

@@ -63,4 +63,47 @@ class ResetComplete(APIView):
         serializer = CreateNewPasswordSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
-            return Response('Вы успешно восстановили пароль', status=200)
+            return Response('Password reseted successfully', status=200)
+
+class FollowUnfollowView(APIView):
+    permission_classes = [IsAuthenticated, ]
+
+    def first_profile(self):
+        try:
+            return User.objects.get(user=self.request.user)
+        except User.DoesNotExist:
+            return Response('User doesnt exist', status=status.HTTP_400_BAD_REQUEST)
+
+    def second_profile(self, pk):
+            try:
+                return User.objects.get(id=pk)
+            except User.DoesNotExist:
+                return Response('User doesnt exist', status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request, format=None):
+        pk = request.data.get('email')
+        req_type = request.data.get('type')
+
+        first_profile = self.first_profile()
+        second_profile = self.second_profile(pk)
+
+        if req_type == 'follow':
+                first_profile.following.add(second_profile)
+                second_profile.followers.add(first_profile)
+                return Response({"Following": "Following success!!"}, status=status.HTTP_200_OK)
+
+        elif req_type == 'accept':
+            first_profile.followers.add(second_profile)
+            second_profile.following.add(first_profile)
+            return Response({"Accepted": "Follow request successfuly accespted!!"}, status=status.HTTP_200_OK)
+
+        elif req_type == 'unfollow':
+            first_profile.following.remove(second_profile)
+            second_profile.followers.remove(first_profile)
+            return Response({"Unfollow": "Unfollow success!!"}, status=status.HTTP_200_OK)
+
+        elif req_type == 'remove':
+            first_profile.followers.remove(second_profile)
+            second_profile.following.remove(first_profile)
+            return Response({"Remove Success": "Successfuly removed your follower!!"}, status=status.HTTP_200_OK)
+

@@ -6,9 +6,9 @@ from .models import *
 User = get_user_model()
 
 
-class CategorySerializer(serializers.ModelSerializer):
+class TagSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Category
+        model = Tag
         fields = ('name', )
 
 
@@ -40,7 +40,7 @@ class TweetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tweet
-        fields = ('id', 'title', 'author', 'created_at', 'text', 'category', 'image')
+        fields = ('id', 'author', 'created_at', 'text', 'tag', 'image')
 
     def get_fields(self):
         action = self.context.get('action')
@@ -148,7 +148,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['user'] = instance.user.email
-        representation['tweet'] = instance.tweet.title
+        representation['tweet'] = instance.tweet.text
         return representation
 
 

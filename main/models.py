@@ -3,7 +3,7 @@ from django.db import models
 from account.models import User
 
 
-class Category(models.Model):
+class Tag(models.Model):
     slug = models.SlugField(max_length=50, primary_key=True)
     name = models.CharField(max_length=50, unique=True)
 
@@ -13,13 +13,12 @@ class Category(models.Model):
 
 class Tweet(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tweet')
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='tweet')
-    title = models.CharField(max_length=455)
+    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name='tweet')
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.title
+        return self.text
 
 
 class Image(models.Model):

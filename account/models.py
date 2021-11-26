@@ -6,7 +6,7 @@ from django_countries.data import COUNTRIES
 from django.db.models import Q, F
 from rest_framework_simplejwt.tokens import RefreshToken
 
-AUTH_PROVIDERS = {'facebook':'facebook', 'google':'google', 'twitter':'twitter', 'email':'email'}
+# AUTH_PROVIDERS = {'facebook':'facebook', 'google':'google', 'email':'email'}
 
 
 
@@ -33,25 +33,27 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
+
     username = None
     email = models.EmailField(max_length=100, primary_key=True)
-    avatar = models.ImageField(upload_to='uploads/avatar', blank=True, null=True)
-    header = models.ImageField(upload_to='uploads/headers', blank=True, null=True)
+    avatar = models.ImageField(default='defaultimages/default.jpeg', upload_to='avatar', blank=True, null=True)
+    header = models.ImageField(default='defaultimages/defaultcover.png', upload_to='headers', blank=True, null=True)
     about = models.CharField(max_length=160, blank=True, null=True)
     country = models.CharField(max_length=30,choices=sorted(COUNTRIES.items()), null=True, blank=True)
     is_active = models.BooleanField(default=False)
     created_date = models.DateField(auto_now_add=True)
     name = models.CharField(max_length=100, blank=True, null=True)
     activation_code = models.CharField(max_length=255, blank=True)
+    following = models.ManyToManyField('self', blank=True, related_name='followers', symmetrical=False)
     # auth_provider = models.CharField(max_length=255, blank=True, null=False, default=AUTH_PROVIDERS.get('email'))
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    REQUIRED_FIELDS = ['name']
 
     objects = UserManager()
 
     def __str__(self):
-        return f'{self.username}'
+        return f'@{self.name}'
 
     def create_activation_code(self):
         import hashlib
@@ -74,3 +76,19 @@ class User(AbstractUser):
             'refresh': str(refresh),
             'access': str(refresh.access_token)
         }
+
+    def followers_count(self):
+        ''' exception if no of followers '''
+        if self.followers.count():
+            return self.followers.count()
+        return 0
+
+    def following_count(self):
+        ''' exception if no of following '''
+        if self.following.count():
+            return self.following.count()
+        return 0
+
+    @property
+    def tweet_count(self):
+        return self.tweet.all().count()

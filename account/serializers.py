@@ -4,6 +4,7 @@ from account.utils import send_activation_code
 from account.models import User
 
 
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(min_length=6, write_only=True)
     password_confirm = serializers.CharField(min_length=6, write_only=True)
@@ -67,7 +68,7 @@ class CreateNewPasswordSerializer(serializers.Serializer):
 
     def validate_email(self, email):
         if not User.objects.filter(email=email).exists():
-            raise serializers.ValidationError('Пользователя с таким email не найден')
+            raise serializers.ValidationError('User not found')
         return email
 
     def validate_activation_code(self, activation_code):
@@ -96,4 +97,23 @@ class CreateNewPasswordSerializer(serializers.Serializer):
         user.set_password(password)
         user.save()
         return user
+
+
+class EachUserSerializer(serializers.ModelSerializer):
+    email = serializers.CharField(source='user.email')
+
+    class Meta:
+        model = User
+        fields = ( 'email', 'avatar')
+        read_only_fields = ('email', 'avatar')
+
+
+class FollowerSerializer(serializers.ModelSerializer):
+    followers = EachUserSerializer(many=True, read_only=True)
+    following = EachUserSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = User
+        fields = ('followers', 'following')
+        read_only_fields = ('followers', 'following')
 
