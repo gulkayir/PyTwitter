@@ -1,6 +1,7 @@
 
 from celery import shared_task
 from django.core.mail import send_mail
+from twitter_api._celery import app
 
 
 # def send_confirmation_email(user):
@@ -15,7 +16,7 @@ from django.core.mail import send_mail
 #         fail_silently=False,
 #     )
 
-
+@app.task
 def send_activation_code(user):
     activation_url = f'{user.activation_code}'
     message = f"""Restore password use code: {activation_url}"""
