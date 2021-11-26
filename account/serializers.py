@@ -11,12 +11,17 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'password', 'password_confirm')
+        fields = ('email', 'password', 'password_confirm', 'username', )
 
     def validate_email(self, email):
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError('User with given email already exists')
         return email
+
+    def validate_username(self, username):
+        if User.objects.filter(username=username).exists():
+            raise serializers.ValidationError('User with given username already exists')
+        return username
 
     def validate(self, validated_data):
         password = validated_data.get('password')
@@ -26,11 +31,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         return validated_data
 
     def create(self, validated_data):
-        email = validated_data.get('email')
-        password = validated_data.get('password')
-        user = User.objects.create_user(email=email, password=password)
-        send_activation_code(email)
+        user = User.objects.create_user(**validated_data)
         return user
+
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()

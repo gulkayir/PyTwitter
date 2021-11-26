@@ -10,20 +10,35 @@ from rest_framework.views import APIView
 
 from main.models import Tweet
 from main.serializers import TweetSerializer
-from .utils import send_activation_code
+from .utils import send_activation_code, send_confirmation_email
 from account.serializers import RegisterSerializer, LoginSerializer, CreateNewPasswordSerializer, FollowSerializer, \
     UserSerializer, SearchSerializer
 
 User = get_user_model()
 
 
+# class RegistrationView(APIView):
+#     def post(self, request):
+#         data = request.data
+#         serializer = RegisterSerializer(data=data)
+#         if serializer.is_valid(raise_exception=True):
+#             serializer.save()
+#             return Response('Successfully registered. Check your email to confirm', status=status.HTTP_201_CREATED)
+
 class RegistrationView(APIView):
+
     def post(self, request):
-        data = request.data
-        serializer = RegisterSerializer(data=data)
+        serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            return Response('Successfully registered. Check your email to confirm', status=status.HTTP_201_CREATED)
+            user = serializer.save()
+            if user:
+                send_confirmation_email(user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response('Successfully registered. Check your email to confirm', status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
 
 
 class ActivationView(APIView):
@@ -33,6 +48,7 @@ class ActivationView(APIView):
         user.activation_code = ''
         user.save()
         return Response('Your account successfully activated! ', status=status.HTTP_200_OK)
+
 
 
 class LoginView(ObtainAuthToken):
