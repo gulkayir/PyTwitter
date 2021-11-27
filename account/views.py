@@ -10,35 +10,21 @@ from rest_framework.views import APIView
 
 from main.models import Tweet
 from main.serializers import TweetSerializer
-from .utils import send_activation_code, send_confirmation_email
+from .utils import send_activation_mail
 from account.serializers import RegisterSerializer, LoginSerializer, CreateNewPasswordSerializer, FollowSerializer, \
     UserSerializer, SearchSerializer
 
 User = get_user_model()
 
 
-# class RegistrationView(APIView):
-#     def post(self, request):
-#         data = request.data
-#         serializer = RegisterSerializer(data=data)
-#         if serializer.is_valid(raise_exception=True):
-#             serializer.save()
-#             return Response('Successfully registered. Check your email to confirm', status=status.HTTP_201_CREATED)
-
 class RegistrationView(APIView):
-
     def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
+        data = request.data
+        serializer = RegisterSerializer(data=data)
         if serializer.is_valid(raise_exception=True):
-            user = serializer.save()
-            if user:
-                send_confirmation_email(user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response('Successfully registered. Check your email to confirm', status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
+            serializer.save()
+            return Response('Successfully registrated!', status=status.HTTP_201_CREATED)
+        return Response('Not valid', status=status.HTTP_400_BAD_REQUEST)
 
 
 class ActivationView(APIView):
@@ -66,16 +52,14 @@ class LogoutView(APIView):
 
 class ResetPassword(APIView):
     def get(self, request):
-        email = request.query_params.get('email')
-        try:
-            user = User.objects.get(email=email)
-            user.is_active = False
-            user.create_activation_code()
-            user.save()
-            send_activation_code(user)
-            return Response('Вам отправлено письмо', status=200)
-        except User.DoesNotExist:
-            return Response({'msg': 'User doesnt exist'}, status=status.HTTP_400_BAD_REQUEST)
+        email = request.user
+        User = get_user_model()
+        user = get_object_or_404(User, email=email)
+        user.is_active = False
+        user.create_activation_code()
+        user.save()
+        send_activation_mail.delay(email=email, activation_code=str(user.activation_code))
+        return Response('Activation code has been sent to your email', status=status.HTTP_200_OK)
 
 
 class ResetComplete(APIView):
