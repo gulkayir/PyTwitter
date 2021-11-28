@@ -35,6 +35,7 @@ urlpatterns = [
     path('api/v1/account/', include('account.urls')),
     path('api/v1/', include(router.urls)),
     path('api/v1/categories/', TagListView.as_view()),
+    path('chat/', include('chat.urls')),
 
 ]
 if settings.DEBUG:
